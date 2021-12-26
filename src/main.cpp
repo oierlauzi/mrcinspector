@@ -1,11 +1,12 @@
-#include <IO.h>
+#include <Read.h>
+#include <Print.h>
 
 #include <fstream>
 #include <iostream>
 
 using namespace MrcInspector;
 
-static void readAll(std::istream& is, MainHeader& header, std::string& extHeader, DataVariant& data)
+static void readAll(std::istream& is, MainHeader& header, std::string& extHeader, DataBlock& data)
 {
     size_t count;
 
@@ -30,6 +31,16 @@ static void readAll(std::istream& is, MainHeader& header, std::string& extHeader
     //TODO check result
 }
 
+static void printAll(std::ostream& os, const MainHeader& header, const std::string& extHeader, const DataBlock& data)
+{
+    os << "==================== HEADER ====================\n";
+    printHeader(os, header);
+    os << "================ EXTENDED HEADER ===============\n";
+    os << extHeader << '\n';
+    os << "================== DATA BLOCK ==================\n";
+    printData(os, header, data);
+}
+
 int main(int argc, const char* argv[]) {
     if(argc < 2) 
     {
@@ -43,8 +54,11 @@ int main(int argc, const char* argv[]) {
     //Read from file
     MainHeader header;
     std::string extHeader;
-    DataVariant data;
+    DataBlock data;
     readAll(file, header, extHeader, data);
 
+    //Print all to stdout
+    printAll(std::cout, header, extHeader, data);
 
+    return 0;
 }

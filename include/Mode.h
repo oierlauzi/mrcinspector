@@ -62,4 +62,19 @@ struct DataTypeMode<float16>
     static constexpr Mode value = Mode::float16;
 };
 
+constexpr std::string_view toString(Mode x)
+{
+    switch (x)
+    {
+    case Mode::sint8:   return "signed int8";
+    case Mode::sint16:  return "signed int16";
+    case Mode::float32: return "float32";
+    case Mode::cint16:  return "complex int16";
+    case Mode::cfloat32:return "complex float32";
+    case Mode::uint16:  return "unsigned int16";
+    case Mode::float16: return "float16";
+    default:            return "";
+    }
+}
+
 }

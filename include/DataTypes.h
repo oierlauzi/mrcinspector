@@ -29,7 +29,7 @@ using cfloat64 = std::complex<float32>;
 using Word = int32;
 using Label = std::array<char, 80>;
 
-using DataVariant = std::variant<
+using DataBlock = std::variant<
     std::vector<int8>,
     std::vector<int16>,
     std::vector<float32>,
