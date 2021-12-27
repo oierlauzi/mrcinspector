@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 using namespace MrcInspector;
 
@@ -40,6 +41,13 @@ static void readAll(std::istream& is, MainHeader& header, std::string& extHeader
         },
         data
     );
+
+    //Check if the EOF was reached
+    auto remaining = std::vector<char>(std::istreambuf_iterator<char>(is), std::istreambuf_iterator<char>());
+    if(!remaining.empty())
+    {
+        std::cerr << "WARNING: " << remaining.size() << "B were not read.\n";
+    }
 }
 
 static void printAll(std::ostream& os, const MainHeader& header, const std::string& extHeader, const DataBlock& data)
@@ -60,7 +68,7 @@ int main(int argc, const char* argv[]) {
     }
 
     // Open input file
-    std::ifstream file(argv[1]);
+    std::ifstream file(argv[1], std::ios_base::in | std::ios_base::binary);
 
     //Read from file
     MainHeader header;
