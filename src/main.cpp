@@ -12,7 +12,7 @@ static void readAll(std::istream& is, MainHeader& header, std::string& extHeader
 
     //Read the header
     count = readMainHeader(is, header);
-    if(count != 1024)
+    if(count != sizeof(MainHeader))
     {
         std::cerr << "Error reading header. Expected 1024B. Read " << count << "B" << std::endl;
         std::terminate();
@@ -28,7 +28,18 @@ static void readAll(std::istream& is, MainHeader& header, std::string& extHeader
 
     //Read the data block
     count = readData(is, header, data);
-    //TODO check result
+    std::visit(
+        [count] (const auto& x)
+        {
+            const auto size = sizeof(typename std::decay<decltype(x)>::type::value_type) * x.size();
+            if(size != count)
+            {
+                std::cerr << "Error reading the data block. Expected " << size << "B. Read " << count << "B" << std::endl;
+                std::terminate();
+            }
+        },
+        data
+    );
 }
 
 static void printAll(std::ostream& os, const MainHeader& header, const std::string& extHeader, const DataBlock& data)

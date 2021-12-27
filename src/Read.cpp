@@ -17,20 +17,16 @@ static void swapEndianess(T& value)
 {
     static_assert(std::is_scalar<T>::value, "Type must be a scalar type");
 
-    //Copy the data to a temporary array
-    std::array<std::byte, sizeof(T)> tmp;
-    std::memmove(tmp.data(), &value, tmp.size());
-
-    //Swap its endianess (reverse bytes)
-    std::reverse(tmp.begin(), tmp.end());
-
-    //Copy the new value
-    std::memmove(&value, tmp.data(), tmp.size());
+    //Swap its endianess in place (reverse bytes)
+    auto* first = reinterpret_cast<std::byte*>(&value);
+    auto* last = first + sizeof(T);
+    std::reverse(first, last);
 }
 
 template<typename T>
 static void swapEndianess(std::complex<T>& value)
 {
+    //Swap the endianess for each of the components
     swapEndianess(reinterpret_cast<T*>(&value)[0]);
     swapEndianess(reinterpret_cast<T*>(&value)[1]);
 }
@@ -89,8 +85,9 @@ static size_t readDataImpl(std::istream& is, const MainHeader& header, std::vect
     data.resize(nElements);
 
     //Read from disk
-    auto result = is.readsome(reinterpret_cast<char*>(data.data()), nBytes);
-    if(result == nBytes)
+    size_t result = 0;
+    is.read(reinterpret_cast<char*>(data.data()), nBytes);
+    if(is.good())
     {
         //Match the endianess
         const auto makeEndianessFunc = getMakeEndianFunc<T>(getModeEndianess(header.byteOrder, DataTypeMode<T>::value));
@@ -100,15 +97,8 @@ static size_t readDataImpl(std::istream& is, const MainHeader& header, std::vect
                 data.begin(), data.end(),
                 makeEndianessFunc
             );
+            result = nBytes;
         }
-        else
-        {
-            result = 0;
-        }
-    }
-    else
-    {
-        result = 0;
     }
     
     return result;
@@ -126,8 +116,9 @@ static size_t readDataImpl(std::istream& is, const MainHeader& header, DataBlock
 size_t readMainHeader(std::istream& is, MainHeader& header)
 {
     //Read the whole file
-    size_t count = is.readsome(reinterpret_cast<char*>(&header), sizeof(header));
-    if(count == sizeof(MainHeader))
+    size_t result = 0;
+    is.read(reinterpret_cast<char*>(&header), sizeof(header));
+    if(is.good())
     {
         //Endianess and exttype is always stored as BE. Ensure it is correctly stored
         makeBigEndian(header.byteOrder);
@@ -173,24 +164,20 @@ size_t readMainHeader(std::istream& is, MainHeader& header)
             makeEndianFuncFlt(header.origin[1]);
             makeEndianFuncFlt(header.origin[2]);
             makeEndianFuncFlt(header.rms);
+
+            //All OK
+            result = sizeof(MainHeader);
         }
-        else
-        {
-            count = 0;
-        }
-    }
-    else
-    {
-        count = 0;
     }
 
-    return count;
+    return result;
 }
 
 size_t readExtendedHeader(std::istream& is, const MainHeader& header, std::string& extHeader)
 {
     extHeader.resize(header.extHeaderLen);
-    return is.readsome(extHeader.data(), extHeader.size());
+    is.read(extHeader.data(), extHeader.size());
+    return is.good() ? extHeader.size() : 0;
 }
 
 size_t readData(std::istream& is, const MainHeader& header, DataBlock& data)

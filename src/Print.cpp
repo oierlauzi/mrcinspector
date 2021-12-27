@@ -127,7 +127,8 @@ void printHeader(std::ostream& os, const MainHeader& header)
 void printData(std::ostream& os, const MainHeader& header, const DataBlock& data)
 {
     std::visit(
-        [&os, &header] (const auto& values) {
+        [&os, &header] (const auto& values) 
+        {
             printDataImpl(os, header, values);
         },
         data
